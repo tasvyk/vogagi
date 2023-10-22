@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+
+    <title>PA#1, Ольховик</title>
+    <style>
+        body {
+            background-color: #EEEEEE;
+        }
+    </style>
+
+    <script src="./Utils/trackball-rotator.js"></script>
+    <script src="./Utils/m4.js"></script>
+    <script src="./shader.gpu"></script>
+    <script src="./main.js"></script>
+
+</head>
+
+<body onload="init()">
+
+    <h1>
+        <center>A Kiss Surface with "Trackball" Mouse Rotation</center><br>
+    </h1>
+
+    <table>
+        <tr>
+            <th>
+                <div id="canvas-holder">
+                    <canvas width="800" height="600" id="webglcanvas" style="background-color:grey"></canvas>
+                </div>
+            </th>
+            <th>
+                <h2>&emsp; Drag your mouse on the surface to rotate it.<br>
+                    &emsp;On a touch screen, you can use your finger.</h2>
+            </th>
+        </tr>
+</body>
+
+</html>
