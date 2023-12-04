@@ -1,8 +1,8 @@
 'use strict';
 
 let gl;                         // The webgl context.
-let surface;                    // A surface model
-let shProgram;                  // A shader program
+let surface;                    // A surface model.
+let shProgram;                  // A shader program.
 let spaceball;                  // A SimpleRotator object that lets the user rotate the view by mouse.
 
 
@@ -16,13 +16,14 @@ function deg2rad(angle) {
 function Model(name) {
     this.name = name;
     this.iVertexBuffer = gl.createBuffer();
+    this.vertices = 0;
     this.count = 0;
 
     this.BufferData = function (vertices) {
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
-
+        this.vertices = vertices;
         this.count = vertices.length / 3;
     }
 
@@ -31,15 +32,13 @@ function Model(name) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
-
-        gl.drawArrays(gl.LINE_STRIP, 0, this.count);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.count);
     }
 }
 
 
 // Constructor
 function ShaderProgram(name, program) {
-
     this.name = name;
     this.prog = program;
 
@@ -58,7 +57,7 @@ function ShaderProgram(name, program) {
 
 // Draws a colored Kiss Surface, along with a set of coordinate axes.
 function draw() {
-    gl.clearColor(0, 0, 0, 0.35);
+    gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     /* Set the values of the projection transformation */
@@ -73,55 +72,51 @@ function draw() {
     let matAccum0 = m4.multiply(rotateToPointZero, modelView);
     let matAccum1 = m4.multiply(translateToPointZero, matAccum0);
 
+    let modelViewInv = m4.inverse(matAccum1, new Float32Array(16));
+    let normalMatrix = m4.transpose(modelViewInv, new Float32Array(16));
+
     /* Multiply the projection matrix times the modelview matrix to give the
        combined transformation matrix, and send that to the shader program. */
     let modelViewProjection = m4.multiply(projection, matAccum1);
 
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection);
-
-    /* Defines the green color for the surface */
-    gl.uniform4fv(shProgram.iColor, [0, 1, 0, 1]);
-
+    gl.uniformMatrix4fv(shProgram.iNormalMatrix, false, normalMatrix);
+    
     surface.Draw();
 }
 
-/**
+/*
     Creates surface data for a Kiss Surface using parametric equations.
     Returns an array containing vertex data.
  */
 function CreateSurfaceData() {
     let vertexList = [];
-    let x;
-    let y;
+    let x, y, z, x1, y1, z1, u1;
+    let zScale = 500;
+    let zStep = 1 / zScale;
+    let uStep = 0.5;
 
-    // Loop through values to create coordinates for horizontal lines
-    for (let u = 0; u <= 360; u += 9) {
-        for (let z = -1; z <= 1.1; z += 0.1) {
+    //  Loop through values to create coordinates.
+    for (let u = 0; u <= 360; u += uStep) {
+        for (let z0 = -1 * zScale; z0 <= zScale; z0 += 1) {
 
-            // Calculate x, y, and z coordinates based on parametric equations
+        // Calculate x, y, and z coordinates based on parametric equations.
+            z = z0 / zScale;
             x = z * z * Math.sqrt(1 - z) * Math.cos(deg2rad(u));
             y = z * z * Math.sqrt(1 - z) * Math.sin(deg2rad(u));
-
             vertexList.push(x, y, z);
+
+            z1 = z + zStep;
+            u1 = u + uStep;
+            x1 = z1 * z1 * Math.sqrt(1 - z1) * Math.cos(deg2rad(u1));
+            y1 = z1 * z1 * Math.sqrt(1 - z1) * Math.sin(deg2rad(u1));
+            vertexList.push(x1, y1, z1);
         }
     }
 
-    // Loop through values to create coordinates for vertical lines
-    for (let z = -1; z <= 1; z += 0.1) {
-        for (let u = 0; u <= 360; u += 9) {
-
-            // Calculate x, y, and z coordinates based on parametric equations
-            x = z * z * Math.sqrt(1 - z) * Math.cos(deg2rad(u));
-            y = z * z * Math.sqrt(1 - z) * Math.sin(deg2rad(u));
-
-            vertexList.push(x, y, z);
-        }
-    }
-
-    // Return the array containing the vertex data for the 3D surface
+    // Return the array containing the vertex data for the 3D surface.
     return vertexList;
 }
-
 
 /* Initialize the WebGL context. Called from init() */
 function initGL() {
@@ -132,7 +127,8 @@ function initGL() {
 
     shProgram.iAttribVertex = gl.getAttribLocation(prog, "vertex");
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
-    shProgram.iColor = gl.getUniformLocation(prog, "color");
+    shProgram.iLightPosition = gl.getUniformLocation(prog, "lightPosition"); 
+    shProgram.iNormalMatrix = gl.getUniformLocation(prog, "normalMatrix");
 
     surface = new Model('Surface');
     surface.BufferData(CreateSurfaceData());
@@ -174,7 +170,7 @@ function createProgram(gl, vShader, fShader) {
 
 
 /**
- * initialization function that will be called when the page has loaded
+ * Initialization of a function that will be called when the page has loaded.
  */
 function init() {
     let canvas;
@@ -200,6 +196,25 @@ function init() {
     }
 
     spaceball = new TrackballRotator(canvas, draw, 0);
+
+    let xInput = document.getElementById("x");
+    let yInput = document.getElementById("y");
+    let zInput = document.getElementById("z");
+
+    const updateLight = () => {
+        let x = parseFloat(xInput.value);
+        let y = parseFloat(yInput.value);
+        let z = parseFloat(zInput.value);
+
+        console.log(x, y, z);
+
+        gl.uniform3fv(shProgram.iLightPosition, [x, y, z]);
+        draw();
+    };
+
+    xInput.addEventListener("input", updateLight);
+    yInput.addEventListener("input", updateLight);
+    zInput.addEventListener("input", updateLight);
 
     draw();
 }
