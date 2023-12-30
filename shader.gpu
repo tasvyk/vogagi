@@ -1,0 +1,58 @@
+// Vertex shader
+const vertexShaderSource = `
+attribute vec3 vertex;
+varying vec3 vVertex; 
+varying vec3 vVertexPos;
+uniform mat4 ModelViewProjectionMatrix;
+
+
+void main() {
+    vec4 position = ModelViewProjectionMatrix * vec4(vertex,1.0);
+    vVertex = vertex;
+    vVertexPos = vec3(position) / position.w;
+    gl_Position = position;
+}`;
+
+
+// Fragment shader
+const fragmentShaderSource = `
+#ifdef GL_FRAGMENT_PRECISION_HIGH
+   precision highp float;
+#else
+   precision mediump float;
+#endif
+
+varying vec3 vVertex;
+varying vec3 vVertexPos;
+uniform mat4 normalMatrix; 
+uniform vec3 lightPosition;
+
+vec3 calcLight(vec3 position) {
+    vec3 lightColor = vec3(0.0, 0.0, 0.545);
+    vec3 shapeColor = vec3(1.0, 1.0, 0.0);
+
+    vec3 ambient = lightColor * 0.6;
+    vec3 normal = normalize(vec3(normalMatrix * vec4(vVertex, 0.0))); // Using surface normal.
+    vec3 lightDirection = normalize(lightPosition - position);
+    float lambertian = max(dot(normal, lightDirection), 0.0);
+    vec3 diffuse = shapeColor * lambertian;
+    float specularStrength = 0.4;
+    float spec = 0.0;
+    
+    if (lambertian > 0.0) {     //! To prevent bugs with excessive lighting.
+        vec3 reflectDir = reflect(-lightDirection, normal);     // Reflected light vector.
+        vec3 viewDir = normalize(-position);   
+        float specAngle = max(dot(viewDir, reflectDir), 0.0);
+        spec = pow(specAngle, 40.0);
+    }
+    vec3 specular = specularStrength * spec * lightColor;
+
+    return ambient + diffuse + specular;
+}
+uniform bool light;
+void main() {
+    gl_FragColor = vec4(calcLight(vVertexPos), 1.0);
+    if(light){
+        gl_FragColor =vec4(1.0);
+    }
+}`;
