@@ -1,7 +1,7 @@
-# Presentation in .gif format:
+# Presentation in .gif format
 ![](https://github.com/tasvyk/vogagi/blob/CGW/demo.gif?raw=true)
 
-# Report in .pdf format:
+# Report in .pdf format
 https://github.com/tasvyk/vogagi/blob/CGW/report.pdf
 
 # About project
