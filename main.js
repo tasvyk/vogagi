@@ -273,7 +273,7 @@ function LoadTexture() {
 
     const image = new Image();
     image.crossOrigin = 'anonymus';
-    image.src = "https://i.ibb.co/64YrbNt/metallic-rock.png";
+    image.src = "https://raw.githubusercontent.com/tasvyk/vogagi/CGW/metallic_rock.png";
     image.onload = () => {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(
