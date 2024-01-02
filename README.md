@@ -3,7 +3,7 @@
 ![](https://github.com/tasvyk/vogagi/blob/CGW/demo.gif?raw=true)
 
 # Report in .pdf format:
-![](https://github.com/tasvyk/vogagi/blob/CGW/report.pdf)
+https://github.com/tasvyk/vogagi/blob/CGW/report.pdf
 
 Project that accompanies VGGI credit module.
 
